@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CommunityHub | Gestão de Centros Comunitários</title>
+<meta name="author" content="Dione Castro Alves — InNovaIdeia">
+
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+<style>
+/* ============================================================
+   VARIABLES & RESET
+   ============================================================ */
+:root {
+    --navy:    #0D1B2A;
+    --navy-2:  #162032;
+    --navy-3:  #1E2D40;
+    --emerald: #10B981;
+    --emerald-d:#0D9268;
+    --amber:   #F59E0B;
+    --amber-d: #D97706;
+    --red:     #EF4444;
+    --blue:    #3B82F6;
+    --text-1:  #F1F5F9;
+    --text-2:  #94A3B8;
+    --text-3:  #64748B;
+    --surface: #FFFFFF;
+    --surface-2:#F8FAFC;
+    --border:  #E2E8F0;
+    --border-2:#CBD5E1;
+    --shadow:  0 2px 16px rgba(13,27,42,.08);
+    --shadow-lg:0 8px 32px rgba(13,27,42,.14);
+    --r:       10px;
+    --sidebar-w:260px;
+    --topbar-h:64px;
+    --font-h:  'Syne', sans-serif;
+    --font-b:  'Nunito', sans-serif;
+    --transition:.18s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-b);background:var(--surface-2);color:#1E293B;min-height:100vh}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+input,select,textarea{font-family:inherit}
+img{max-width:100%}
+.hidden{display:none!important}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:99px}
+
+/* ============================================================
+   LOGIN SCREEN
+   ============================================================ */
+#loginScreen{
+    position:fixed;inset:0;z-index:9999;
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy-3) 60%,#0a3520 100%);
+    display:flex;align-items:center;justify-content:center;
+}
+.login-card{
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.10);
+    backdrop-filter:blur(20px);
+    border-radius:20px;
+    padding:48px 40px;
+    width:100%;max-width:420px;
+    box-shadow:0 24px 64px rgba(0,0,0,.4);
+}
+.login-logo{
+    font-family:var(--font-h);font-size:1.75rem;font-weight:800;
+    color:#fff;margin-bottom:4px;
+    display:flex;align-items:center;gap:10px;
+}
+.login-logo .dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--emerald);box-shadow:0 0 12px var(--emerald);
+}
+.login-sub{color:var(--text-2);font-size:.875rem;margin-bottom:36px}
+.login-card label{display:block;color:#CBD5E1;font-size:.8rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.login-card input{
+    width:100%;padding:11px 14px;border-radius:8px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+    color:#fff;font-size:.95rem;transition:var(--transition);
+    margin-bottom:18px;
+}
+.login-card input:focus{outline:none;border-color:var(--emerald);background:rgba(16,185,129,.08)}
+.login-card input::placeholder{color:#475569}
+.btn-login{
+    width:100%;padding:13px;border-radius:8px;
+    background:var(--emerald);color:#fff;font-family:var(--font-h);
+    font-weight:700;font-size:1rem;letter-spacing:.02em;
+    transition:var(--transition);margin-top:4px;
+}
+.btn-login:hover{background:var(--emerald-d);transform:translateY(-1px)}
+.login-err{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#FCA5A5;border-radius:8px;padding:10px 14px;font-size:.875rem;margin-top:12px}
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+#app{display:flex;min-height:100vh}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+#sidebar{
+    width:var(--sidebar-w);min-height:100vh;
+    background:var(--navy);
+    position:fixed;left:0;top:0;
+    display:flex;flex-direction:column;
+    z-index:100;transition:transform var(--transition);
+}
+.sidebar-head{
+    padding:24px 24px 16px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+}
+.sidebar-logo{
+    font-family:var(--font-h);font-weight:800;font-size:1.2rem;color:#fff;
+    display:flex;align-items:center;gap:8px;
+}
+.sidebar-logo i{color:var(--emerald);font-size:1.3rem}
+.user-pill{
+    margin-top:14px;display:flex;align-items:center;gap:10px;
+    background:rgba(255,255,255,.05);border-radius:8px;padding:10px 12px;
+}
+.user-avatar{
+    width:34px;height:34px;border-radius:50%;
+    background:linear-gradient(135deg,var(--emerald),var(--blue));
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:.85rem;color:#fff;flex-shrink:0;
+}
+.user-info{flex:1;min-width:0}
+.user-name{color:#fff;font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:.72rem;margin-top:1px}
+.badge-geral{color:var(--amber);background:rgba(245,158,11,.15);padding:2px 7px;border-radius:99px;font-size:.7rem;font-weight:700}
+.badge-centro{color:var(--emerald);background:rgba(16,185,129,.15);padding:2px 7px;border-radius:99px;font-size:.7rem;font-weight:700}
+
+.nav-section{padding:20px 16px 0;flex:1;overflow-y:auto}
+.nav-label{font-size:.67rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);padding:0 8px;margin-bottom:8px;margin-top:16px}
+.nav-label:first-child{margin-top:0}
+.nav-item{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 12px;border-radius:8px;
+    color:var(--text-2);font-size:.9rem;font-weight:500;
+    transition:var(--transition);margin-bottom:2px;
+    cursor:pointer;
+}
+.nav-item i{font-size:1.05rem;width:20px;text-align:center}
+.nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.nav-item.active{background:rgba(16,185,129,.15);color:var(--emerald)}
+.nav-item.active i{color:var(--emerald)}
+.nav-item.danger{color:#FCA5A5}
+.nav-item.danger:hover{background:rgba(239,68,68,.1);color:#EF4444}
+
+.centro-label{
+    font-size:.72rem;font-weight:600;color:var(--text-3);
+    padding:0 12px 16px;margin-top:auto;border-top:1px solid rgba(255,255,255,.06);
+    padding-top:12px;
+}
+.centro-label span{color:var(--emerald)}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+#main{
+    margin-left:var(--sidebar-w);flex:1;
+    display:flex;flex-direction:column;min-height:100vh;
+}
+
+/* ============================================================
+   TOPBAR
+   ============================================================ */
+#topbar{
+    height:var(--topbar-h);background:#fff;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;position:sticky;top:0;z-index:50;
+    box-shadow:var(--shadow);
+}
+.topbar-title{font-family:var(--font-h);font-weight:700;font-size:1.1rem;color:var(--navy)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.btn-icon{
+    width:38px;height:38px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--surface-2);border:1px solid var(--border);
+    color:var(--text-3);font-size:1rem;transition:var(--transition);
+}
+.btn-icon:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* ============================================================
+   PAGE CONTENT
+   ============================================================ */
+#pageContent{padding:28px;flex:1}
+
+.page{display:none}
+.page.active{display:block}
+
+/* ============================================================
+   COMMON COMPONENTS
+   ============================================================ */
+.page-header{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    flex-wrap:wrap;gap:12px;margin-bottom:24px;
+}
+.page-header h1{font-family:var(--font-h);font-size:1.5rem;font-weight:700;color:var(--navy)}
+.page-header p{color:var(--text-3);font-size:.875rem;margin-top:2px}
+
+/* Buttons */
+.btn{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:9px 18px;border-radius:8px;font-weight:600;
+    font-size:.875rem;transition:var(--transition);
+    white-space:nowrap;
+}
+.btn-primary{background:var(--emerald);color:#fff}
+.btn-primary:hover{background:var(--emerald-d);transform:translateY(-1px)}
+.btn-secondary{background:var(--surface-2);color:var(--navy);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--border)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{background:#DC2626}
+.btn-amber{background:var(--amber);color:#fff}
+.btn-amber:hover{background:var(--amber-d)}
+.btn-sm{padding:6px 12px;font-size:.8rem}
+.btn-xs{padding:4px 10px;font-size:.76rem;border-radius:6px}
+
+/* Cards */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-body{padding:20px}
+
+/* Stat cards */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.c-emerald::before{background:var(--emerald)}
+.stat-card.c-amber::before{background:var(--amber)}
+.stat-card.c-blue::before{background:var(--blue)}
+.stat-card.c-red::before{background:var(--red)}
+.stat-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:12px}
+.stat-icon.c-emerald{background:rgba(16,185,129,.12);color:var(--emerald)}
+.stat-icon.c-amber{background:rgba(245,158,11,.12);color:var(--amber)}
+.stat-icon.c-blue{background:rgba(59,130,246,.12);color:var(--blue)}
+.stat-icon.c-red{background:rgba(239,68,68,.12);color:var(--red)}
+.stat-value{font-family:var(--font-h);font-size:2rem;font-weight:800;color:var(--navy)}
+.stat-label{color:var(--text-3);font-size:.82rem;margin-top:2px}
+
+/* Table */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+.table-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px;border-bottom:1px solid var(--border);
+    background:var(--surface-2);
+}
+.table-head h3{font-family:var(--font-h);font-size:1rem;font-weight:700;color:var(--navy)}
+table{width:100%;border-collapse:collapse}
+thead th{
+    background:var(--surface-2);padding:11px 16px;
+    text-align:left;font-size:.78rem;font-weight:700;
+    color:var(--text-3);letter-spacing:.05em;text-transform:uppercase;
+    border-bottom:1px solid var(--border);
+}
+tbody tr{border-bottom:1px solid var(--border);transition:background var(--transition)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface-2)}
+tbody td{padding:12px 16px;font-size:.9rem;color:#334155}
+.actions-cell{display:flex;gap:6px;justify-content:flex-end}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:.72rem;font-weight:700}
+.badge-green{background:rgba(16,185,129,.12);color:#059669}
+.badge-yellow{background:rgba(245,158,11,.12);color:#D97706}
+.badge-blue{background:rgba(59,130,246,.12);color:#2563EB}
+.badge-gray{background:rgba(100,116,139,.12);color:#475569}
+.badge-red{background:rgba(239,68,68,.12);color:#DC2626}
+.badge-orange{background:rgba(249,115,22,.12);color:#EA580C}
+
+/* Forms */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.span-2{grid-column:span 2}
+.form-group label{font-size:.8rem;font-weight:700;color:#475569;letter-spacing:.04em;text-transform:uppercase}
+.form-group input,
+.form-group select,
+.form-group textarea{
+    padding:10px 13px;border:1px solid var(--border);border-radius:8px;
+    font-size:.9rem;color:var(--navy);background:#fff;
+    transition:var(--transition);
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{
+    outline:none;border-color:var(--emerald);
+    box-shadow:0 0 0 3px rgba(16,185,129,.12);
+}
+.form-group textarea{resize:vertical;min-height:90px}
+.form-actions{
+    display:flex;gap:10px;padding-top:8px;
+    border-top:1px solid var(--border);margin-top:8px;
+}
+
+/* Panel with form + table */
+.split-panel{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+.panel-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+.panel-card-head{
+    padding:16px 20px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:8px;
+}
+.panel-card-head h3{font-family:var(--font-h);font-weight:700;font-size:1rem;color:var(--navy)}
+.panel-card-head i{color:var(--emerald)}
+.panel-card-body{padding:20px}
+
+/* Filters bar */
+.filters-bar{
+    display:flex;gap:10px;flex-wrap:wrap;
+    background:#fff;border:1px solid var(--border);border-radius:var(--r);
+    padding:14px 16px;margin-bottom:20px;
+}
+.filters-bar input,
+.filters-bar select{
+    padding:8px 12px;border:1px solid var(--border);border-radius:7px;
+    font-size:.875rem;color:var(--navy);background:#fff;flex:1;min-width:160px;
+}
+.filters-bar input:focus,
+.filters-bar select:focus{outline:none;border-color:var(--emerald)}
+.filters-bar .btn{flex-shrink:0}
+
+/* Dashboard grids */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.dash-grid.three{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:900px){.dash-grid{grid-template-columns:1fr}.split-panel{grid-template-columns:1fr}}
+
+/* Activity list */
+.activity-list{display:flex;flex-direction:column;gap:0}
+.activity-item{
+    display:flex;align-items:center;gap:14px;
+    padding:12px 0;border-bottom:1px solid var(--border);
+}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.activity-dot.green{background:var(--emerald)}
+.activity-dot.yellow{background:var(--amber)}
+.activity-dot.blue{background:var(--blue)}
+.activity-dot.gray{background:#94A3B8}
+.activity-info{flex:1}
+.activity-name{font-weight:600;font-size:.9rem;color:var(--navy)}
+.activity-meta{font-size:.8rem;color:var(--text-3);margin-top:2px}
+
+/* Avisos */
+.aviso-card{
+    border-radius:var(--r);border:1px solid var(--border);
+    padding:16px 18px;margin-bottom:12px;
+    border-left-width:4px;
+}
+.aviso-card.urgente{border-left-color:var(--red);background:rgba(239,68,68,.04)}
+.aviso-card.alta{border-left-color:var(--amber);background:rgba(245,158,11,.04)}
+.aviso-card.normal{border-left-color:var(--blue);background:rgba(59,130,246,.04)}
+.aviso-card.baixa{border-left-color:#94A3B8;background:#fafafa}
+.aviso-titulo{font-family:var(--font-h);font-weight:700;font-size:1rem;color:var(--navy)}
+.aviso-conteudo{color:#475569;font-size:.875rem;margin-top:4px}
+.aviso-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+
+/* Galeria grid */
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.gallery-item{
+    border-radius:var(--r);overflow:hidden;border:1px solid var(--border);
+    background:#fff;box-shadow:var(--shadow);position:relative;
+}
+.gallery-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.gallery-placeholder{
+    width:100%;aspect-ratio:4/3;
+    background:linear-gradient(135deg,var(--navy-3),var(--navy));
+    display:flex;align-items:center;justify-content:center;
+    font-size:2rem;color:rgba(255,255,255,.3);
+}
+.gallery-caption{padding:10px 12px}
+.gallery-caption h4{font-size:.875rem;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gallery-caption p{font-size:.78rem;color:var(--text-3);margin-top:2px}
+.gallery-actions{
+    position:absolute;top:8px;right:8px;
+    display:flex;gap:5px;opacity:0;transition:var(--transition);
+}
+.gallery-item:hover .gallery-actions{opacity:1}
+
+/* Empty state */
+.empty-state{
+    text-align:center;padding:48px 20px;color:var(--text-3);
+}
+.empty-state i{font-size:2.5rem;opacity:.3;margin-bottom:12px;display:block}
+.empty-state p{font-size:.9rem}
+
+/* Notification toast */
+#toast{
+    position:fixed;bottom:24px;right:24px;z-index:9999;
+    display:flex;flex-direction:column;gap:8px;
+}
+.toast-item{
+    background:#1E293B;color:#fff;border-radius:10px;
+    padding:12px 18px;font-size:.875rem;font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.3);
+    display:flex;align-items:center;gap:10px;
+    animation:slideIn .2s ease;min-width:240px;
+}
+.toast-item.success i{color:var(--emerald)}
+.toast-item.error i{color:var(--red)}
+.toast-item.info i{color:var(--blue)}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
+
+/* Loading */
+#loading{
+    position:fixed;inset:0;z-index:8888;background:rgba(13,27,42,.6);
+    display:flex;align-items:center;justify-content:center;
+}
+.loader{width:40px;height:40px;border:3px solid rgba(16,185,129,.2);border-top-color:var(--emerald);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Modal overlay */
+.modal-overlay{
+    position:fixed;inset:0;z-index:500;
+    background:rgba(13,27,42,.6);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal-box{
+    background:#fff;border-radius:16px;width:100%;max-width:520px;
+    box-shadow:0 24px 64px rgba(0,0,0,.2);
+    animation:modalIn .2s ease;
+}
+@keyframes modalIn{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+.modal-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px 24px;border-bottom:1px solid var(--border);
+}
+.modal-head h3{font-family:var(--font-h);font-weight:700;font-size:1.1rem;color:var(--navy)}
+.modal-close{
+    width:32px;height:32px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-3);transition:var(--transition);
+}
+.modal-close:hover{background:var(--surface-2);color:var(--navy)}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+/* Confirm dialog */
+.confirm-box{
+    background:#fff;border-radius:16px;width:100%;max-width:380px;
+    padding:32px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.2);
+}
+.confirm-icon{font-size:2.5rem;color:var(--red);margin-bottom:12px}
+.confirm-box h3{font-family:var(--font-h);font-weight:700;font-size:1.1rem;color:var(--navy);margin-bottom:8px}
+.confirm-box p{color:var(--text-3);font-size:.875rem;margin-bottom:24px}
+.confirm-actions{display:flex;gap:10px;justify-content:center}
+
+/* Responsive */
+@media(max-width:768px){
+    :root{--sidebar-w:0px}
+    #sidebar{transform:translateX(-260px);width:260px}
+    #sidebar.open{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,.4)}
+    #main{margin-left:0}
+    #pageContent{padding:16px}
+    .stats-grid{grid-template-columns:1fr 1fr}
+    .gallery-grid{grid-template-columns:repeat(2,1fr)}
+    .filters-bar{flex-direction:column}
+}
+@media(max-width:480px){
+    .stats-grid{grid-template-columns:1fr}
+    .gallery-grid{grid-template-columns:1fr}
+    .login-card{padding:32px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- ======================================================
+     LOGIN SCREEN
+     ====================================================== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="dot"></div>
+      CommunityHub
+    </div>
+    <p class="login-sub">Plataforma de Gestão de Centros Comunitários</p>
+    <div>
+      <label>E-mail</label>
+      <input type="email" id="loginEmail" placeholder="seu@email.com">
+      <label>Senha</label>
+      <input type="password" id="loginPassword" placeholder="••••••••">
+      <button class="btn-login" onclick="login()">
+        <i class="bi bi-box-arrow-in-right"></i> Entrar
+      </button>
+      <div id="loginErr" class="login-err hidden"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     APP SHELL
+     ====================================================== -->
+<div id="app" class="hidden">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-logo">
+        <i class="bi bi-building-check"></i> CommunityHub
+      </div>
+      <div class="user-pill">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div class="user-info">
+          <div class="user-name" id="userNameSidebar">Carregando...</div>
+          <div id="userRoleBadge"></div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav-section">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item active" onclick="navigate('dashboard')">
+        <i class="bi bi-grid-1x2-fill"></i> Dashboard
+      </div>
+
+      <div class="nav-label">Gestão</div>
+      <div class="nav-item nav-geral" onclick="navigate('centros')" style="display:none">
+        <i class="bi bi-buildings"></i> Centros
+      </div>
+      <div class="nav-item" onclick="navigate('atividades')">
+        <i class="bi bi-clipboard2-check"></i> Atividades
+      </div>
+      <div class="nav-item" onclick="navigate('agenda')">
+        <i class="bi bi-calendar3"></i> Agenda
+      </div>
+      <div class="nav-item" onclick="navigate('galeria')">
+        <i class="bi bi-images"></i> Galeria
+      </div>
+      <div class="nav-item" onclick="navigate('avisos')">
+        <i class="bi bi-megaphone"></i> Avisos
+      </div>
+
+      <div class="nav-label">Administração</div>
+      <div class="nav-item nav-geral" onclick="navigate('usuarios')" style="display:none">
+        <i class="bi bi-people"></i> Usuários
+      </div>
+      <div class="nav-item" onclick="navigate('relatorios')">
+        <i class="bi bi-bar-chart-line"></i> Relatórios
+      </div>
+
+      <div class="nav-label"></div>
+      <div class="nav-item danger" onclick="logout()">
+        <i class="bi bi-box-arrow-left"></i> Sair
+      </div>
+    </nav>
+
+    <div class="centro-label" id="sidebarCentroLabel"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- TOPBAR -->
+    <div id="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn-icon" id="menuToggle" onclick="toggleSidebar()" style="display:none">
+          <i class="bi bi-list"></i>
+        </button>
+        <span class="topbar-title" id="topbarTitle">Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-icon" title="Atualizar" onclick="reloadData()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+    </div>
+
+    <!-- PAGE CONTENT -->
+    <div id="pageContent">
+
+      <!-- ==================== DASHBOARD ==================== -->
+      <div id="pageDashboard" class="page active">
+        <div class="page-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p id="dashSubtitle">Visão geral do sistema</p>
+          </div>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card c-emerald">
+            <div class="stat-icon c-emerald"><i class="bi bi-buildings"></i></div>
+            <div class="stat-value" id="statCentros">—</div>
+            <div class="stat-label">Centros Ativos</div>
+          </div>
+          <div class="stat-card c-blue">
+            <div class="stat-icon c-blue"><i class="bi bi-clipboard2-check"></i></div>
+            <div class="stat-value" id="statAtividades">—</div>
+            <div class="stat-label">Atividades Ativas</div>
+          </div>
+          <div class="stat-card c-amber">
+            <div class="stat-icon c-amber"><i class="bi bi-calendar-event"></i></div>
+            <div class="stat-value" id="statEventos">—</div>
+            <div class="stat-label">Eventos Próximos (7d)</div>
+          </div>
+          <div class="stat-card c-red">
+            <div class="stat-icon c-red"><i class="bi bi-people"></i></div>
+            <div class="stat-value" id="statParticipantes">—</div>
+            <div class="stat-label">Total Participantes</div>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <div class="card">
+            <div class="card-body">
+              <h3 style="font-family:var(--font-h);font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:16px">
+                <i class="bi bi-clock-history" style="color:var(--emerald)"></i> Atividades Recentes
+              </h3>
+              <div class="activity-list" id="dashAtividades">
+                <div class="empty-state"><i class="bi bi-clipboard2"></i><p>Nenhuma atividade</p></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <h3 style="font-family:var(--font-h);font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:16px">
+                <i class="bi bi-megaphone" style="color:var(--amber)"></i> Avisos Recentes
+              </h3>
+              <div id="dashAvisos">
+                <div class="empty-state"><i class="bi bi-megaphone"></i><p>Nenhum aviso</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== CENTROS (admin_geral) ==================== -->
+      <div id="pageCentros" class="page">
+        <div class="page-header">
+          <div><h1>Centros Comunitários</h1><p>Gerencie todos os centros da rede</p></div>
+        </div>
+        <div class="split-panel">
+          <!-- Formulário -->
+          <div class="panel-card">
+            <div class="panel-card-head"><i class="bi bi-plus-circle-fill"></i><h3 id="formCentroTitle">Novo Centro</h3></div>
+            <div class="panel-card-body">
+              <div class="form-grid" style="grid-template-columns:1fr">
+                <div class="form-group">
+                  <label>Nome *</label>
+                  <input type="text" id="cNome" placeholder="Nome do centro">
+                </div>
+                <div class="form-group">
+                  <label>Endereço</label>
+                  <input type="text" id="cEndereco" placeholder="Rua, número, bairro">
+                </div>
+                <div class="form-group">
+                  <label>Telefone</label>
+                  <input type="text" id="cTelefone" placeholder="(XX) XXXXX-XXXX">
+                </div>
+                <div class="form-group">
+                  <label>E-mail</label>
+                  <input type="email" id="cEmail" placeholder="email@centro.br">
+                </div>
+                <div class="form-group">
+                  <label>Responsável</label>
+                  <input type="text" id="cResponsavel" placeholder="Nome do responsável">
+                </div>
+                <div class="form-group">
+                  <label>Descrição</label>
+                  <textarea id="cDescricao" placeholder="Breve descrição do centro"></textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" onclick="salvarCentro()"><i class="bi bi-check2"></i> Salvar</button>
+                <button class="btn btn-secondary" onclick="cancelarCentro()"><i class="bi bi-x"></i> Cancelar</button>
+              </div>
+              <input type="hidden" id="cEditId">
+            </div>
+          </div>
+          <!-- Tabela -->
+          <div class="table-wrap">
+            <div class="table-head">
+              <h3>Centros Cadastrados</h3>
+              <span class="badge badge-blue" id="countCentros">0 centros</span>
+            </div>
+            <div style="overflow-x:auto">
+              <table>
+                <thead><tr>
+                  <th>Nome</th><th>Responsável</th><th>Telefone</th><th>Status</th><th style="text-align:right">Ações</th>
+                </tr></thead>
+                <tbody id="tbCentros">
+                  <tr><td colspan="5"><div class="empty-state"><i class="bi bi-buildings"></i><p>Nenhum centro</p></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ATIVIDADES ==================== -->
+      <div id="pageAtividades" class="page">
+        <div class="page-header">
+          <div><h1>Atividades</h1><p id="atividadesSubtitle">Gerencie as atividades extensionistas</p></div>
+        </div>
+        <div class="split-panel">
+          <div class="panel-card">
+            <div class="panel-card-head"><i class="bi bi-clipboard2-plus-fill"></i><h3 id="formAtivTitle">Nova Atividade</h3></div>
+            <div class="panel-card-body">
+              <div class="form-grid" style="grid-template-columns:1fr">
+                <div class="form-group nav-geral" id="fgAtivCentro">
+                  <label>Centro *</label>
+                  <select id="aNomeCentro"></select>
+                </div>
+                <div class="form-group">
+                  <label>Nome *</label>
+                  <input type="text" id="aNome" placeholder="Nome da atividade">
+                </div>
+                <div class="form-group">
+                  <label>Categoria</label>
+                  <select id="aCategoria">
+                    <option value="">Selecione...</option>
+                    <option>Educação</option><option>Saúde</option><option>Cultura</option>
+                    <option>Esporte</option><option>Meio Ambiente</option><option>Social</option><option>Outro</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Status</label>
+                  <select id="aStatus">
+                    <option>Planejada</option><option>Ativa</option><option>Concluída</option><option>Cancelada</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Participantes</label>
+                  <input type="number" id="aParticipantes" placeholder="0" min="0">
+                </div>
+                <div class="form-group">
+                  <label>Data Início</label>
+                  <input type="date" id="aDataInicio">
+                </div>
+                <div class="form-group">
+                  <label>Data Fim</label>
+                  <input type="date" id="aDataFim">
+                </div>
+                <div class="form-group">
+                  <label>Responsável</label>
+                  <input type="text" id="aResponsavel" placeholder="Nome do responsável">
+                </div>
+                <div class="form-group">
+                  <label>Descrição</label>
+                  <textarea id="aDescricao" placeholder="Descrição da atividade"></textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" onclick="salvarAtividade()"><i class="bi bi-check2"></i> Salvar</button>
+                <button class="btn btn-secondary" onclick="cancelarAtividade()"><i class="bi bi-x"></i> Cancelar</button>
+              </div>
+              <input type="hidden" id="aEditId">
+            </div>
+          </div>
+          <div>
+            <div class="filters-bar">
+              <input type="text" id="filtAtivSearch" placeholder="🔍 Buscar atividade..." oninput="filtrarAtividades()">
+              <select id="filtAtivStatus" onchange="filtrarAtividades()">
+                <option value="">Todos os status</option>
+                <option>Ativa</option><option>Planejada</option><option>Concluída</option><option>Cancelada</option>
+              </select>
+              <select id="filtAtivCat" onchange="filtrarAtividades()">
+                <option value="">Todas categorias</option>
+                <option>Educação</option><option>Saúde</option><option>Cultura</option>
+                <option>Esporte</option><option>Meio Ambiente</option><option>Social</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <div class="table-head">
+                <h3>Lista de Atividades</h3>
+                <span class="badge badge-blue" id="countAtividades">0</span>
+              </div>
+              <div style="overflow-x:auto">
+                <table>
+                  <thead><tr>
+                    <th>Nome</th><th>Centro</th><th>Categoria</th><th>Status</th><th>Part.</th><th style="text-align:right">Ações</th>
+                  </tr></thead>
+                  <tbody id="tbAtividades">
+                    <tr><td colspan="6"><div class="empty-state"><i class="bi bi-clipboard2"></i><p>Nenhuma atividade</p></div></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== AGENDA ==================== -->
+      <div id="pageAgenda" class="page">
+        <div class="page-header">
+          <div><h1>Agenda</h1><p>Eventos e compromissos</p></div>
+        </div>
+        <div class="split-panel">
+          <div class="panel-card">
+            <div class="panel-card-head"><i class="bi bi-calendar-plus-fill"></i><h3 id="formAgendaTitle">Novo Evento</h3></div>
+            <div class="panel-card-body">
+              <div class="form-grid" style="grid-template-columns:1fr">
+                <div class="form-group nav-geral" id="fgAgCentro">
+                  <label>Centro *</label>
+                  <select id="agCentro"></select>
+                </div>
+                <div class="form-group">
+                  <label>Título *</label>
+                  <input type="text" id="agTitulo" placeholder="Título do evento">
+                </div>
+                <div class="form-group">
+                  <label>Atividade Vinculada</label>
+                  <select id="agAtividade"><option value="">Nenhuma</option></select>
+                </div>
+                <div class="form-group">
+                  <label>Data *</label>
+                  <input type="date" id="agData">
+                </div>
+                <div class="form-group">
+                  <label>Hora Início</label>
+                  <input type="time" id="agHoraInicio">
+                </div>
+                <div class="form-group">
+                  <label>Hora Fim</label>
+                  <input type="time" id="agHoraFim">
+                </div>
+                <div class="form-group">
+                  <label>Local</label>
+                  <input type="text" id="agLocal" placeholder="Local do evento">
+                </div>
+                <div class="form-group">
+                  <label>Descrição</label>
+                  <textarea id="agDescricao" placeholder="Detalhes do evento"></textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" onclick="salvarAgenda()"><i class="bi bi-check2"></i> Salvar</button>
+                <button class="btn btn-secondary" onclick="cancelarAgenda()"><i class="bi bi-x"></i> Cancelar</button>
+              </div>
+              <input type="hidden" id="agEditId">
+            </div>
+          </div>
+          <div class="table-wrap">
+            <div class="table-head">
+              <h3>Próximos Eventos</h3>
+              <span class="badge badge-blue" id="countAgenda">0</span>
+            </div>
+            <div style="overflow-x:auto">
+              <table>
+                <thead><tr>
+                  <th>Título</th><th>Centro</th><th>Data</th><th>Horário</th><th>Local</th><th style="text-align:right">Ações</th>
+                </tr></thead>
+                <tbody id="tbAgenda">
+                  <tr><td colspan="6"><div class="empty-state"><i class="bi bi-calendar3"></i><p>Nenhum evento</p></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== GALERIA ==================== -->
+      <div id="pageGaleria" class="page">
+        <div class="page-header">
+          <div><h1>Galeria</h1><p>Fotos e registros das atividades</p></div>
+        </div>
+        <div class="split-panel">
+          <div class="panel-card">
+            <div class="panel-card-head"><i class="bi bi-image-fill"></i><h3>Nova Foto</h3></div>
+            <div class="panel-card-body">
+              <div class="form-grid" style="grid-template-columns:1fr">
+                <div class="form-group nav-geral" id="fgGalCentro">
+                  <label>Centro *</label>
+                  <select id="galCentro"></select>
+                </div>
+                <div class="form-group">
+                  <label>URL da Imagem *</label>
+                  <input type="url" id="galUrl" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                  <label>Título</label>
+                  <input type="text" id="galTitulo" placeholder="Título da foto">
+                </div>
+                <div class="form-group">
+                  <label>Atividade Vinculada</label>
+                  <select id="galAtividade"><option value="">Nenhuma</option></select>
+                </div>
+                <div class="form-group">
+                  <label>Descrição</label>
+                  <textarea id="galDescricao" placeholder="Descrição da foto"></textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" onclick="salvarGaleria()"><i class="bi bi-check2"></i> Salvar</button>
+                <button class="btn btn-secondary" onclick="cancelarGaleria()"><i class="bi bi-x"></i> Cancelar</button>
+              </div>
+              <input type="hidden" id="galEditId">
+            </div>
+          </div>
+          <div>
+            <div class="gallery-grid" id="galeriaGrid">
+              <div class="empty-state" style="grid-column:1/-1"><i class="bi bi-images"></i><p>Nenhuma foto cadastrada</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== AVISOS ==================== -->
+      <div id="pageAvisos" class="page">
+        <div class="page-header">
+          <div><h1>Avisos</h1><p>Comunicados e informações importantes</p></div>
+        </div>
+        <div class="split-panel">
+          <div class="panel-card">
+            <div class="panel-card-head"><i class="bi bi-megaphone-fill"></i><h3 id="formAvisoTitle">Novo Aviso</h3></div>
+            <div class="panel-card-body">
+              <div class="form-grid" style="grid-template-columns:1fr">
+                <div class="form-group nav-geral" id="fgAvCentro">
+                  <label>Centro (deixe vazio = global)</label>
+                  <select id="avCentro"><option value="">— Aviso Global —</option></select>
+                </div>
+                <div class="form-group">
+                  <label>Título *</label>
+                  <input type="text" id="avTitulo" placeholder="Título do aviso">
+                </div>
+                <div class="form-group">
+                  <label>Prioridade</label>
+                  <select id="avPrioridade">
+                    <option value="normal">Normal</option>
+                    <option value="baixa">Baixa</option>
+                    <option value="alta">Alta</option>
+                    <option value="urgente">Urgente</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Expira em</label>
+                  <input type="datetime-local" id="avExpiracao">
+                </div>
+                <div class="form-group">
+                  <label>Conteúdo *</label>
+                  <textarea id="avConteudo" placeholder="Texto do aviso..." style="min-height:120px"></textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" onclick="salvarAviso()"><i class="bi bi-check2"></i> Publicar</button>
+                <button class="btn btn-secondary" onclick="cancelarAviso()"><i class="bi bi-x"></i> Cancelar</button>
+              </div>
+              <input type="hidden" id="avEditId">
+            </div>
+          </div>
+          <div id="avisosLista">
+            <div class="empty-state"><i class="bi bi-megaphone"></i><p>Nenhum aviso</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== USUÁRIOS (admin_geral) ==================== -->
+      <div id="pageUsuarios" class="page">
+        <div class="page-header">
+          <div><h1>Usuários</h1><p>Gerencie admins dos centros</p></div>
+          <button class="btn btn-primary" onclick="abrirModalUsuario()"><i class="bi bi-person-plus-fill"></i> Convidar Usuário</button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head">
+            <h3>Usuários do Sistema</h3>
+            <span class="badge badge-blue" id="countUsuarios">0</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr>
+                <th>Nome</th><th>E-mail</th><th>Papel</th><th>Centro</th><th>Status</th><th style="text-align:right">Ações</th>
+              </tr></thead>
+              <tbody id="tbUsuarios">
+                <tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i><p>Nenhum usuário</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== RELATÓRIOS ==================== -->
+      <div id="pageRelatorios" class="page">
+        <div class="page-header">
+          <div><h1>Relatórios</h1><p>Indicadores e exportações</p></div>
+        </div>
+        <div class="stats-grid" id="relStats"></div>
+        <div class="table-wrap" id="relDashCentros" style="display:none">
+          <div class="table-head"><h3>Resumo por Centro</h3></div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Centro</th><th>Atividades</th><th>Ativas</th><th>Participantes</th><th>Eventos</th><th>Avisos</th></tr></thead>
+              <tbody id="tbRelCentros"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /pageContent -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ==================== MODAL USUÁRIO ==================== -->
+<div id="modalUsuario" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3><i class="bi bi-person-plus" style="color:var(--emerald)"></i> Configurar Usuário</h3>
+      <button class="modal-close" onclick="fecharModal('modalUsuario')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:14px">
+        <label>E-mail do Usuário</label>
+        <input type="email" id="usuEmail" placeholder="admin@centro.br">
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Papel</label>
+        <select id="usuRole">
+          <option value="admin_centro">Admin do Centro</option>
+          <option value="admin_geral">Admin Geral</option>
+        </select>
+      </div>
+      <div class="form-group" id="fgUsuCentro">
+        <label>Centro</label>
+        <select id="usuCentro"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModal('modalUsuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarUsuario()"><i class="bi bi-check2"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CONFIRM DIALOG ==================== -->
+<div id="confirmDialog" class="modal-overlay hidden">
+  <div class="confirm-box">
+    <div class="confirm-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+    <h3>Confirmar Exclusão</h3>
+    <p id="confirmMsg">Deseja realmente excluir este item?</p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="fecharModal('confirmDialog')">Cancelar</button>
+      <button class="btn btn-danger" id="confirmOk">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+<!-- LOADING -->
+<div id="loading" class="hidden"><div class="loader"></div></div>
+
+<script>
+/* ============================================================
+   ⚙️  CONFIGURAÇÃO SUPABASE
+   Substitua pelos seus dados em:
+   Supabase > Project Settings > API
+   ============================================================ */
+const SUPABASE_URL = 'https://mlqgxjujaxfixaxertpn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1scWd4anVqYXhmaXhheGVydHBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDg3MzgsImV4cCI6MjA4NzQyNDczOH0.ri69N3__upUzWRHdsGHZ6CuGLy6l8PZnVCypw-WArK8';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ============================================================
+   ESTADO GLOBAL
+   ============================================================ */
+let G = {
+    user: null,       // Supabase auth user
+    profile: null,    // profiles row
+    centros: [],
+    atividades: [],
+    agenda: [],
+    galeria: [],
+    avisos: [],
+    usuarios: [],
+    currentPage: 'dashboard',
+};
+
+/* ============================================================
+   INICIALIZAÇÃO
+   ============================================================ */
+(async () => {
+    // Checar sessão ativa
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) {
+        G.user = session.user;
+        await carregarProfile();
+        mostrarApp();
+    }
+
+    // Listener de mudança de auth
+    sb.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN') {
+            G.user = session.user;
+            await carregarProfile();
+            mostrarApp();
+        } else if (event === 'SIGNED_OUT') {
+            G.user = null; G.profile = null;
+            mostrarLogin();
+        }
+    });
+})();
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+async function login() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass  = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginErr');
+    errEl.classList.add('hidden');
+    if (!email || !pass) { showErr('Preencha e-mail e senha.'); return; }
+    setLoading(true);
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    setLoading(false);
+    if (error) showErr(error.message === 'Invalid login credentials'
+        ? 'E-mail ou senha incorretos.' : error.message);
+
+    function showErr(msg) {
+        errEl.textContent = msg;
+        errEl.classList.remove('hidden');
+    }
+}
+
+async function logout() {
+    await sb.auth.signOut();
+}
+
+async function carregarProfile() {
+    const { data } = await sb.from('profiles').select('*').eq('id', G.user.id).single();
+    G.profile = data;
+}
+
+/* ============================================================
+   MOSTRAR / ESCONDER TELAS
+   ============================================================ */
+function mostrarLogin() {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('app').classList.add('hidden');
+}
+
+async function mostrarApp() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    configurarUI();
+    await reloadData();
+    navigate('dashboard');
+}
+
+function configurarUI() {
+    const p = G.profile;
+    if (!p) return;
+
+    // Avatar
+    const initials = p.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+    document.getElementById('userAvatar').textContent = initials;
+    document.getElementById('userNameSidebar').textContent = p.nome;
+    document.getElementById('userRoleBadge').innerHTML =
+        p.role === 'admin_geral'
+            ? '<span class="badge-geral">Admin Geral</span>'
+            : '<span class="badge-centro">Admin Centro</span>';
+
+    // Elementos visíveis apenas para admin_geral
+    document.querySelectorAll('.nav-geral').forEach(el => {
+        el.style.display = p.role === 'admin_geral' ? 'flex' : 'none';
+    });
+
+    // Label do centro na sidebar
+    const label = document.getElementById('sidebarCentroLabel');
+    label.innerHTML = p.role === 'admin_geral'
+        ? 'Acesso global a todos os centros'
+        : `Seu centro: <span>${p.centro_id || '—'}</span>`;
+
+    // Menu toggle em mobile
+    if (window.innerWidth <= 768)
+        document.getElementById('menuToggle').style.display = 'flex';
+}
+
+/* ============================================================
+   NAVEGAÇÃO
+   ============================================================ */
+const PAGE_TITLES = {
+    dashboard: 'Dashboard',
+    centros: 'Centros Comunitários',
+    atividades: 'Atividades',
+    agenda: 'Agenda',
+    galeria: 'Galeria',
+    avisos: 'Avisos',
+    usuarios: 'Usuários',
+    relatorios: 'Relatórios',
+};
+
+function navigate(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+    const el = document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1));
+    if (el) el.classList.add('active');
+
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(n => {
+        if (n.textContent.trim().toLowerCase().includes(page.toLowerCase().substring(0,6))) {
+            n.classList.add('active');
+        }
+    });
+
+    document.getElementById('topbarTitle').textContent = PAGE_TITLES[page] || page;
+    G.currentPage = page;
+
+    if (page === 'relatorios') renderRelatorios();
+
+    // Fechar sidebar em mobile
+    if (window.innerWidth <= 768)
+        document.getElementById('sidebar').classList.remove('open');
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+/* ============================================================
+   CARREGAMENTO DE DADOS
+   ============================================================ */
+async function reloadData() {
+    setLoading(true);
+    try {
+        const isCentro = G.profile?.role === 'admin_centro';
+        const cid = G.profile?.centro_id;
+
+        // Centros
+        const { data: centros } = await sb.from('centros').select('*').order('nome');
+        G.centros = centros || [];
+
+        // Atividades (RLS filtra automaticamente)
+        const { data: ativ } = await sb.from('atividades').select('*, centros(nome)').order('created_at', { ascending: false });
+        G.atividades = ativ || [];
+
+        // Agenda
+        const { data: ag } = await sb.from('agenda').select('*, centros(nome), atividades(nome)').order('data');
+        G.agenda = ag || [];
+
+        // Galeria
+        const { data: gal } = await sb.from('galeria').select('*, centros(nome)').order('created_at', { ascending: false });
+        G.galeria = gal || [];
+
+        // Avisos
+        const { data: av } = await sb.from('avisos').select('*').eq('ativo', true).order('created_at', { ascending: false });
+        G.avisos = av || [];
+
+        // Usuários (apenas admin_geral)
+        if (G.profile?.role === 'admin_geral') {
+            const { data: usr } = await sb.from('profiles').select('*, centros(nome)').order('nome');
+            G.usuarios = usr || [];
+        }
+
+        renderAll();
+        popularSelects();
+    } catch(e) {
+        toast('Erro ao carregar dados: ' + e.message, 'error');
+    }
+    setLoading(false);
+}
+
+/* ============================================================
+   RENDER GERAL
+   ============================================================ */
+function renderAll() {
+    renderDashboard();
+    renderCentros();
+    renderAtividades();
+    renderAgenda();
+    renderGaleria();
+    renderAvisos();
+    renderUsuarios();
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function renderDashboard() {
+    const hoje = new Date();
+    const em7d = new Date(); em7d.setDate(hoje.getDate() + 7);
+
+    document.getElementById('statCentros').textContent     = G.centros.filter(c=>c.ativo).length;
+    document.getElementById('statAtividades').textContent  = G.atividades.filter(a=>a.status==='Ativa').length;
+    document.getElementById('statParticipantes').textContent = G.atividades.reduce((s,a)=>s+(a.participantes||0),0);
+
+    const proxEvents = G.agenda.filter(e=>{
+        const d = new Date(e.data); return d >= hoje && d <= em7d;
+    });
+    document.getElementById('statEventos').textContent = proxEvents.length;
+
+    // Atividades recentes
+    const ulAt = document.getElementById('dashAtividades');
+    const recentes = G.atividades.slice(0,5);
+    if (!recentes.length) {
+        ulAt.innerHTML = '<div class="empty-state"><i class="bi bi-clipboard2"></i><p>Nenhuma atividade</p></div>';
+    } else {
+        const colors = {Ativa:'green', Planejada:'blue', Concluída:'gray', Cancelada:'red'};
+        ulAt.innerHTML = recentes.map(a=>`
+            <div class="activity-item">
+                <div class="activity-dot ${colors[a.status]||'gray'}"></div>
+                <div class="activity-info">
+                    <div class="activity-name">${esc(a.nome)}</div>
+                    <div class="activity-meta">${esc(a.centros?.nome||'—')} · ${a.categoria||'—'}</div>
+                </div>
+                ${badgeStatus(a.status)}
+            </div>`).join('');
+    }
+
+    // Avisos recentes
+    const divAv = document.getElementById('dashAvisos');
+    const avRecentes = G.avisos.slice(0,3);
+    if (!avRecentes.length) {
+        divAv.innerHTML = '<div class="empty-state"><i class="bi bi-megaphone"></i><p>Nenhum aviso</p></div>';
+    } else {
+        divAv.innerHTML = avRecentes.map(a=>`
+            <div class="aviso-card ${a.prioridade}">
+                <div class="aviso-titulo">${esc(a.titulo)}</div>
+                <div class="aviso-conteudo">${esc(truncate(a.conteudo,80))}</div>
+                <div class="aviso-footer">
+                    <span class="badge ${badgePrioridadeClass(a.prioridade)}">${a.prioridade}</span>
+                    <span style="font-size:.75rem;color:var(--text-3)">${fmtDate(a.created_at)}</span>
+                </div>
+            </div>`).join('');
+    }
+}
+
+/* ============================================================
+   CENTROS
+   ============================================================ */
+function renderCentros() {
+    const tb = document.getElementById('tbCentros');
+    document.getElementById('countCentros').textContent = G.centros.length + ' centros';
+    if (!G.centros.length) {
+        tb.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="bi bi-buildings"></i><p>Nenhum centro</p></div></td></tr>';
+        return;
+    }
+    tb.innerHTML = G.centros.map(c=>`
+        <tr>
+            <td><strong>${esc(c.nome)}</strong><br><small style="color:var(--text-3)">${esc(c.endereco||'')}</small></td>
+            <td>${esc(c.responsavel||'—')}</td>
+            <td>${esc(c.telefone||'—')}</td>
+            <td>${c.ativo ? '<span class="badge badge-green">Ativo</span>' : '<span class="badge badge-gray">Inativo</span>'}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn btn-secondary btn-xs" onclick="editarCentro(${c.id})"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-danger btn-xs" onclick="excluirCentro(${c.id})"><i class="bi bi-trash"></i></button>
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+async function salvarCentro() {
+    const id = document.getElementById('cEditId').value;
+    const payload = {
+        nome:       document.getElementById('cNome').value.trim(),
+        endereco:   document.getElementById('cEndereco').value.trim(),
+        telefone:   document.getElementById('cTelefone').value.trim(),
+        email:      document.getElementById('cEmail').value.trim(),
+        responsavel:document.getElementById('cResponsavel').value.trim(),
+        descricao:  document.getElementById('cDescricao').value.trim(),
+    };
+    if (!payload.nome) { toast('Nome é obrigatório', 'error'); return; }
+    setLoading(true);
+    let err;
+    if (id) {
+        ({ error: err } = await sb.from('centros').update(payload).eq('id', id));
+    } else {
+        ({ error: err } = await sb.from('centros').insert(payload));
+    }
+    setLoading(false);
+    if (err) { toast(err.message, 'error'); return; }
+    toast(id ? 'Centro atualizado!' : 'Centro criado!', 'success');
+    cancelarCentro();
+    await reloadData();
+}
+
+function editarCentro(id) {
+    const c = G.centros.find(x=>x.id===id); if(!c) return;
+    document.getElementById('cEditId').value = id;
+    document.getElementById('cNome').value        = c.nome||'';
+    document.getElementById('cEndereco').value    = c.endereco||'';
+    document.getElementById('cTelefone').value    = c.telefone||'';
+    document.getElementById('cEmail').value       = c.email||'';
+    document.getElementById('cResponsavel').value = c.responsavel||'';
+    document.getElementById('cDescricao').value   = c.descricao||'';
+    document.getElementById('formCentroTitle').textContent = 'Editar Centro';
+}
+
+function cancelarCentro() {
+    ['cEditId','cNome','cEndereco','cTelefone','cEmail','cResponsavel','cDescricao']
+        .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('formCentroTitle').textContent = 'Novo Centro';
+}
+
+function excluirCentro(id) {
+    confirmar('Excluir este centro? Todas as atividades vinculadas serão removidas.', async () => {
+        setLoading(true);
+        const { error } = await sb.from('centros').delete().eq('id', id);
+        setLoading(false);
+        if (error) { toast(error.message, 'error'); return; }
+        toast('Centro excluído!', 'success');
+        await reloadData();
+    });
+}
+
+/* ============================================================
+   ATIVIDADES
+   ============================================================ */
+function renderAtividades(lista) {
+    lista = lista || G.atividades;
+    const tb = document.getElementById('tbAtividades');
+    document.getElementById('countAtividades').textContent = lista.length;
+    if (!lista.length) {
+        tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="bi bi-clipboard2"></i><p>Nenhuma atividade</p></div></td></tr>';
+        return;
+    }
+    tb.innerHTML = lista.map(a=>`
+        <tr>
+            <td><strong>${esc(a.nome)}</strong></td>
+            <td>${esc(a.centros?.nome||'—')}</td>
+            <td>${a.categoria||'—'}</td>
+            <td>${badgeStatus(a.status)}</td>
+            <td>${a.participantes||0}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn btn-secondary btn-xs" onclick="editarAtividade(${a.id})"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-danger btn-xs" onclick="excluirAtividade(${a.id})"><i class="bi bi-trash"></i></button>
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+function filtrarAtividades() {
+    const q     = document.getElementById('filtAtivSearch').value.toLowerCase();
+    const st    = document.getElementById('filtAtivStatus').value;
+    const cat   = document.getElementById('filtAtivCat').value;
+    const lista = G.atividades.filter(a =>
+        (!q  || a.nome.toLowerCase().includes(q) || (a.descricao||'').toLowerCase().includes(q)) &&
+        (!st  || a.status === st) &&
+        (!cat || a.categoria === cat)
+    );
+    renderAtividades(lista);
+}
+
+async function salvarAtividade() {
+    const id = document.getElementById('aEditId').value;
+    const centroId = G.profile?.role === 'admin_geral'
+        ? parseInt(document.getElementById('aNomeCentro').value)
+        : G.profile?.centro_id;
+    const payload = {
+        centro_id:    centroId,
+        nome:         document.getElementById('aNome').value.trim(),
+        categoria:    document.getElementById('aCategoria').value,
+        status:       document.getElementById('aStatus').value,
+        participantes:parseInt(document.getElementById('aParticipantes').value)||0,
+        data_inicio:  document.getElementById('aDataInicio').value||null,
+        data_fim:     document.getElementById('aDataFim').value||null,
+        responsavel:  document.getElementById('aResponsavel').value.trim(),
+        descricao:    document.getElementById('aDescricao').value.trim(),
+        created_by:   G.user.id,
+    };
+    if (!payload.nome || !payload.centro_id) { toast('Nome e centro são obrigatórios', 'error'); return; }
+    setLoading(true);
+    let err;
+    if (id) { ({ error: err } = await sb.from('atividades').update(payload).eq('id', id)); }
+    else    { ({ error: err } = await sb.from('atividades').insert(payload)); }
+    setLoading(false);
+    if (err) { toast(err.message, 'error'); return; }
+    toast(id ? 'Atividade atualizada!' : 'Atividade criada!', 'success');
+    cancelarAtividade();
+    await reloadData();
+}
+
+function editarAtividade(id) {
+    const a = G.atividades.find(x=>x.id===id); if(!a) return;
+    document.getElementById('aEditId').value       = id;
+    document.getElementById('aNome').value         = a.nome||'';
+    document.getElementById('aCategoria').value    = a.categoria||'';
+    document.getElementById('aStatus').value       = a.status||'Planejada';
+    document.getElementById('aParticipantes').value= a.participantes||0;
+    document.getElementById('aDataInicio').value   = a.data_inicio||'';
+    document.getElementById('aDataFim').value      = a.data_fim||'';
+    document.getElementById('aResponsavel').value  = a.responsavel||'';
+    document.getElementById('aDescricao').value    = a.descricao||'';
+    if (G.profile?.role === 'admin_geral')
+        document.getElementById('aNomeCentro').value = a.centro_id;
+    document.getElementById('formAtivTitle').textContent = 'Editar Atividade';
+}
+
+function cancelarAtividade() {
+    ['aEditId','aNome','aParticipantes','aDataInicio','aDataFim','aResponsavel','aDescricao']
+        .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('aCategoria').value = '';
+    document.getElementById('aStatus').value = 'Planejada';
+    document.getElementById('formAtivTitle').textContent = 'Nova Atividade';
+}
+
+function excluirAtividade(id) {
+    confirmar('Excluir esta atividade?', async () => {
+        setLoading(true);
+        const { error } = await sb.from('atividades').delete().eq('id', id);
+        setLoading(false);
+        if (error) { toast(error.message, 'error'); return; }
+        toast('Atividade excluída!', 'success');
+        await reloadData();
+    });
+}
+
+/* ============================================================
+   AGENDA
+   ============================================================ */
+function renderAgenda() {
+    const tb = document.getElementById('tbAgenda');
+    document.getElementById('countAgenda').textContent = G.agenda.length;
+    if (!G.agenda.length) {
+        tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="bi bi-calendar3"></i><p>Nenhum evento</p></div></td></tr>';
+        return;
+    }
+    tb.innerHTML = G.agenda.map(e=>`
+        <tr>
+            <td><strong>${esc(e.titulo)}</strong></td>
+            <td>${esc(e.centros?.nome||'—')}</td>
+            <td>${fmtDate(e.data)}</td>
+            <td>${e.hora_inicio ? e.hora_inicio.substring(0,5) : '—'}${e.hora_fim ? ' – '+e.hora_fim.substring(0,5):''}</td>
+            <td>${esc(e.local||'—')}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn btn-secondary btn-xs" onclick="editarAgenda(${e.id})"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-danger btn-xs" onclick="excluirAgenda(${e.id})"><i class="bi bi-trash"></i></button>
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+async function salvarAgenda() {
+    const id = document.getElementById('agEditId').value;
+    const centroId = G.profile?.role === 'admin_geral'
+        ? parseInt(document.getElementById('agCentro').value)
+        : G.profile?.centro_id;
+    const atv = document.getElementById('agAtividade').value;
+    const payload = {
+        centro_id:    centroId,
+        atividade_id: atv ? parseInt(atv) : null,
+        titulo:       document.getElementById('agTitulo').value.trim(),
+        data:         document.getElementById('agData').value,
+        hora_inicio:  document.getElementById('agHoraInicio').value||null,
+        hora_fim:     document.getElementById('agHoraFim').value||null,
+        local:        document.getElementById('agLocal').value.trim(),
+        descricao:    document.getElementById('agDescricao').value.trim(),
+        created_by:   G.user.id,
+    };
+    if (!payload.titulo || !payload.data || !payload.centro_id) { toast('Título, data e centro são obrigatórios', 'error'); return; }
+    setLoading(true);
+    let err;
+    if (id) { ({ error: err } = await sb.from('agenda').update(payload).eq('id', id)); }
+    else    { ({ error: err } = await sb.from('agenda').insert(payload)); }
+    setLoading(false);
+    if (err) { toast(err.message, 'error'); return; }
+    toast(id ? 'Evento atualizado!' : 'Evento criado!', 'success');
+    cancelarAgenda();
+    await reloadData();
+}
+
+function editarAgenda(id) {
+    const e = G.agenda.find(x=>x.id===id); if(!e) return;
+    document.getElementById('agEditId').value     = id;
+    document.getElementById('agTitulo').value     = e.titulo||'';
+    document.getElementById('agData').value       = e.data||'';
+    document.getElementById('agHoraInicio').value = e.hora_inicio||'';
+    document.getElementById('agHoraFim').value    = e.hora_fim||'';
+    document.getElementById('agLocal').value      = e.local||'';
+    document.getElementById('agDescricao').value  = e.descricao||'';
+    if (G.profile?.role === 'admin_geral')
+        document.getElementById('agCentro').value = e.centro_id;
+    document.getElementById('agAtividade').value = e.atividade_id||'';
+    document.getElementById('formAgendaTitle').textContent = 'Editar Evento';
+}
+
+function cancelarAgenda() {
+    ['agEditId','agTitulo','agData','agHoraInicio','agHoraFim','agLocal','agDescricao']
+        .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('formAgendaTitle').textContent = 'Novo Evento';
+}
+
+function excluirAgenda(id) {
+    confirmar('Excluir este evento da agenda?', async () => {
+        setLoading(true);
+        const { error } = await sb.from('agenda').delete().eq('id', id);
+        setLoading(false);
+        if (error) { toast(error.message, 'error'); return; }
+        toast('Evento excluído!', 'success');
+        await reloadData();
+    });
+}
+
+/* ============================================================
+   GALERIA
+   ============================================================ */
+function renderGaleria() {
+    const grid = document.getElementById('galeriaGrid');
+    if (!G.galeria.length) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="bi bi-images"></i><p>Nenhuma foto</p></div>';
+        return;
+    }
+    grid.innerHTML = G.galeria.map(f=>`
+        <div class="gallery-item">
+            ${f.url_imagem
+                ? `<img class="gallery-img" src="${esc(f.url_imagem)}" alt="${esc(f.titulo||'')}" onerror="this.parentElement.querySelector('.gallery-img').style.display='none';">`
+                : '<div class="gallery-placeholder"><i class="bi bi-image"></i></div>'}
+            <div class="gallery-actions">
+                <button class="btn btn-secondary btn-xs" onclick="editarGaleria(${f.id})"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-danger btn-xs" onclick="excluirGaleria(${f.id})"><i class="bi bi-trash"></i></button>
+            </div>
+            <div class="gallery-caption">
+                <h4>${esc(f.titulo||'Sem título')}</h4>
+                <p>${esc(f.centros?.nome||'—')} · ${fmtDate(f.data_publicacao)}</p>
+            </div>
+        </div>`).join('');
+}
+
+async function salvarGaleria() {
+    const id = document.getElementById('galEditId').value;
+    const centroId = G.profile?.role === 'admin_geral'
+        ? parseInt(document.getElementById('galCentro').value)
+        : G.profile?.centro_id;
+    const atv = document.getElementById('galAtividade').value;
+    const payload = {
+        centro_id:    centroId,
+        atividade_id: atv ? parseInt(atv) : null,
+        url_imagem:   document.getElementById('galUrl').value.trim(),
+        titulo:       document.getElementById('galTitulo').value.trim(),
+        descricao:    document.getElementById('galDescricao').value.trim(),
+        created_by:   G.user.id,
+    };
+    if (!payload.url_imagem || !payload.centro_id) { toast('URL e centro são obrigatórios', 'error'); return; }
+    setLoading(true);
+    let err;
+    if (id) { ({ error: err } = await sb.from('galeria').update(payload).eq('id', id)); }
+    else    { ({ error: err } = await sb.from('galeria').insert(payload)); }
+    setLoading(false);
+    if (err) { toast(err.message, 'error'); return; }
+    toast(id ? 'Foto atualizada!' : 'Foto adicionada!', 'success');
+    cancelarGaleria();
+    await reloadData();
+}
+
+function editarGaleria(id) {
+    const f = G.galeria.find(x=>x.id===id); if(!f) return;
+    document.getElementById('galEditId').value   = id;
+    document.getElementById('galUrl').value      = f.url_imagem||'';
+    document.getElementById('galTitulo').value   = f.titulo||'';
+    document.getElementById('galDescricao').value= f.descricao||'';
+    if (G.profile?.role === 'admin_geral')
+        document.getElementById('galCentro').value = f.centro_id;
+    document.getElementById('galAtividade').value = f.atividade_id||'';
+}
+
+function cancelarGaleria() {
+    ['galEditId','galUrl','galTitulo','galDescricao'].forEach(id=>document.getElementById(id).value='');
+}
+
+function excluirGaleria(id) {
+    confirmar('Excluir esta foto?', async () => {
+        setLoading(true);
+        const { error } = await sb.from('galeria').delete().eq('id', id);
+        setLoading(false);
+        if (error) { toast(error.message, 'error'); return; }
+        toast('Foto excluída!', 'success');
+        await reloadData();
+    });
+}
+
+/* ============================================================
+   AVISOS
+   ============================================================ */
+function renderAvisos() {
+    const div = document.getElementById('avisosLista');
+    if (!G.avisos.length) {
+        div.innerHTML = '<div class="empty-state"><i class="bi bi-megaphone"></i><p>Nenhum aviso</p></div>';
+        return;
+    }
+    div.innerHTML = G.avisos.map(a=>`
+        <div class="aviso-card ${a.prioridade}">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+                <div>
+                    <div class="aviso-titulo">${esc(a.titulo)}</div>
+                    ${a.centro_id ? '' : '<span style="font-size:.72rem;color:var(--blue);font-weight:600">◈ AVISO GLOBAL</span>'}
+                    <div class="aviso-conteudo">${esc(a.conteudo||'')}</div>
+                </div>
+                <div style="display:flex;gap:5px;flex-shrink:0">
+                    <button class="btn btn-secondary btn-xs" onclick="editarAviso(${a.id})"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-danger btn-xs" onclick="excluirAviso(${a.id})"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>
+            <div class="aviso-footer">
+                <span class="badge ${badgePrioridadeClass(a.prioridade)}">${a.prioridade}</span>
+                <span style="font-size:.75rem;color:var(--text-3)">${fmtDate(a.created_at)}</span>
+            </div>
+        </div>`).join('');
+}
+
+async function salvarAviso() {
+    const id = document.getElementById('avEditId').value;
+    const centroId = G.profile?.role === 'admin_geral'
+        ? (document.getElementById('avCentro').value ? parseInt(document.getElementById('avCentro').value) : null)
+        : G.profile?.centro_id;
+    const payload = {
+        centro_id:  centroId,
+        titulo:     document.getElementById('avTitulo').value.trim(),
+        conteudo:   document.getElementById('avConteudo').value.trim(),
+        prioridade: document.getElementById('avPrioridade').value,
+        data_expiracao: document.getElementById('avExpiracao').value||null,
+        created_by: G.user.id,
+    };
+    if (!payload.titulo || !payload.conteudo) { toast('Título e conteúdo são obrigatórios', 'error'); return; }
+    setLoading(true);
+    let err;
+    if (id) { ({ error: err } = await sb.from('avisos').update(payload).eq('id', id)); }
+    else    { ({ error: err } = await sb.from('avisos').insert(payload)); }
+    setLoading(false);
+    if (err) { toast(err.message, 'error'); return; }
+    toast(id ? 'Aviso atualizado!' : 'Aviso publicado!', 'success');
+    cancelarAviso();
+    await reloadData();
+}
+
+function editarAviso(id) {
+    const a = G.avisos.find(x=>x.id===id); if(!a) return;
+    document.getElementById('avEditId').value    = id;
+    document.getElementById('avTitulo').value    = a.titulo||'';
+    document.getElementById('avConteudo').value  = a.conteudo||'';
+    document.getElementById('avPrioridade').value= a.prioridade||'normal';
+    document.getElementById('avExpiracao').value = a.data_expiracao ? a.data_expiracao.slice(0,16) : '';
+    if (G.profile?.role === 'admin_geral' && a.centro_id)
+        document.getElementById('avCentro').value = a.centro_id;
+    document.getElementById('formAvisoTitle').textContent = 'Editar Aviso';
+}
+
+function cancelarAviso() {
+    ['avEditId','avTitulo','avConteudo','avExpiracao'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('avPrioridade').value = 'normal';
+    document.getElementById('formAvisoTitle').textContent = 'Novo Aviso';
+}
+
+function excluirAviso(id) {
+    confirmar('Excluir este aviso?', async () => {
+        setLoading(true);
+        const { error } = await sb.from('avisos').delete().eq('id', id);
+        setLoading(false);
+        if (error) { toast(error.message, 'error'); return; }
+        toast('Aviso excluído!', 'success');
+        await reloadData();
+    });
+}
+
+/* ============================================================
+   USUÁRIOS (admin_geral)
+   ============================================================ */
+function renderUsuarios() {
+    const tb = document.getElementById('tbUsuarios');
+    document.getElementById('countUsuarios').textContent = G.usuarios.length;
+    if (!G.usuarios.length) {
+        tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i><p>Nenhum usuário</p></div></td></tr>';
+        return;
+    }
+    tb.innerHTML = G.usuarios.map(u=>`
+        <tr>
+            <td><strong>${esc(u.nome)}</strong></td>
+            <td>${esc(u.email)}</td>
+            <td>${u.role === 'admin_geral'
+                ? '<span class="badge-geral">Admin Geral</span>'
+                : '<span class="badge-centro">Admin Centro</span>'}</td>
+            <td>${u.centros?.nome ? esc(u.centros.nome) : '<span style="color:var(--text-3)">Todos os centros</span>'}</td>
+            <td>${u.ativo ? '<span class="badge badge-green">Ativo</span>' : '<span class="badge badge-gray">Inativo</span>'}</td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn btn-secondary btn-xs" onclick="abrirModalUsuario(${u.id ? `'${u.id}'` : ''})"><i class="bi bi-pencil"></i></button>
+                    ${u.id !== G.user?.id ? `<button class="btn btn-danger btn-xs" onclick="toggleAtivoUsuario('${u.id}',${u.ativo})">${u.ativo ? '<i class="bi bi-person-x"></i>' : '<i class="bi bi-person-check"></i>'}</button>` : ''}
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+function abrirModalUsuario(userId) {
+    popularSelectsCentros('usuCentro');
+    document.getElementById('usuEmail').value = '';
+    document.getElementById('usuRole').value  = 'admin_centro';
+    document.getElementById('usuCentro').value = '';
+    document.getElementById('modalUsuario').dataset.editId = userId || '';
+    document.getElementById('modalUsuario').classList.remove('hidden');
+
+    if (userId) {
+        const u = G.usuarios.find(x=>x.id===userId);
+        if (u) {
+            document.getElementById('usuEmail').value  = u.email;
+            document.getElementById('usuRole').value   = u.role;
+            document.getElementById('usuCentro').value = u.centro_id||'';
+        }
+    }
+}
+
+async function salvarUsuario() {
+    const editId = document.getElementById('modalUsuario').dataset.editId;
+    const role     = document.getElementById('usuRole').value;
+    const centroId = document.getElementById('usuCentro').value;
+    const payload  = {
+        role,
+        centro_id: role === 'admin_geral' ? null : (centroId ? parseInt(centroId) : null),
+    };
+    if (role === 'admin_centro' && !payload.centro_id) {
+        toast('Selecione o centro para admin_centro', 'error'); return;
+    }
+    setLoading(true);
+    let err;
+    if (editId) {
+        ({ error: err } = await sb.from('profiles').update(payload).eq('id', editId));
+    } else {
+        toast('Para convidar novos usuários, use Authentication > Invite no painel Supabase.', 'info');
+        setLoading(false);
+        fecharModal('modalUsuario');
+        return;
+    }
+    setLoading(false);
+    if (err) { toast(err.message, 'error'); return; }
+    toast('Usuário atualizado!', 'success');
+    fecharModal('modalUsuario');
+    await reloadData();
+}
+
+async function toggleAtivoUsuario(id, ativo) {
+    const { error } = await sb.from('profiles').update({ ativo: !ativo }).eq('id', id);
+    if (error) { toast(error.message, 'error'); return; }
+    toast(ativo ? 'Usuário desativado.' : 'Usuário reativado.', 'success');
+    await reloadData();
+}
+
+/* ============================================================
+   RELATÓRIOS
+   ============================================================ */
+function renderRelatorios() {
+    const hoje = new Date();
+    const em7d = new Date(); em7d.setDate(hoje.getDate() + 7);
+
+    const stats = document.getElementById('relStats');
+    stats.innerHTML = `
+        <div class="stat-card c-emerald">
+            <div class="stat-icon c-emerald"><i class="bi bi-buildings"></i></div>
+            <div class="stat-value">${G.centros.filter(c=>c.ativo).length}</div>
+            <div class="stat-label">Centros Ativos</div>
+        </div>
+        <div class="stat-card c-blue">
+            <div class="stat-icon c-blue"><i class="bi bi-clipboard2-check"></i></div>
+            <div class="stat-value">${G.atividades.length}</div>
+            <div class="stat-label">Total Atividades</div>
+        </div>
+        <div class="stat-card c-amber">
+            <div class="stat-icon c-amber"><i class="bi bi-people"></i></div>
+            <div class="stat-value">${G.atividades.reduce((s,a)=>s+(a.participantes||0),0)}</div>
+            <div class="stat-label">Total Participantes</div>
+        </div>
+        <div class="stat-card c-red">
+            <div class="stat-icon c-red"><i class="bi bi-calendar-event"></i></div>
+            <div class="stat-value">${G.agenda.filter(e=>new Date(e.data)>=hoje&&new Date(e.data)<=em7d).length}</div>
+            <div class="stat-label">Eventos Próx. 7d</div>
+        </div>`;
+
+    if (G.profile?.role === 'admin_geral') {
+        document.getElementById('relDashCentros').style.display = 'block';
+        const tb = document.getElementById('tbRelCentros');
+        tb.innerHTML = G.centros.map(c => {
+            const ativs  = G.atividades.filter(a=>a.centro_id===c.id);
+            const ativas = ativs.filter(a=>a.status==='Ativa').length;
+            const parts  = ativs.reduce((s,a)=>s+(a.participantes||0),0);
+            const evts   = G.agenda.filter(a=>a.centro_id===c.id).length;
+            const avs    = G.avisos.filter(a=>a.centro_id===c.id).length;
+            return `<tr>
+                <td><strong>${esc(c.nome)}</strong></td>
+                <td>${ativs.length}</td>
+                <td>${ativas}</td>
+                <td>${parts}</td>
+                <td>${evts}</td>
+                <td>${avs}</td>
+            </tr>`;
+        }).join('');
+    }
+}
+
+/* ============================================================
+   SELECTS — popular com centros e atividades
+   ============================================================ */
+function popularSelects() {
+    popularSelectsCentros('aNomeCentro');
+    popularSelectsCentros('agCentro');
+    popularSelectsCentros('galCentro');
+    popularSelectsCentros('avCentro', true);
+    popularSelectsCentros('usuCentro');
+    popularAtividades('agAtividade');
+    popularAtividades('galAtividade');
+}
+
+function popularSelectsCentros(id, addGlobal) {
+    const el = document.getElementById(id); if(!el) return;
+    const current = el.value;
+    el.innerHTML = addGlobal ? '<option value="">— Aviso Global —</option>' : '<option value="">Selecione...</option>';
+    G.centros.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id; opt.textContent = c.nome;
+        el.appendChild(opt);
+    });
+    if (current) el.value = current;
+}
+
+function popularAtividades(id) {
+    const el = document.getElementById(id); if(!el) return;
+    el.innerHTML = '<option value="">Nenhuma</option>';
+    G.atividades.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.id; opt.textContent = a.nome;
+        el.appendChild(opt);
+    });
+}
+
+/* ============================================================
+   UTILITÁRIOS
+   ============================================================ */
+function esc(str) {
+    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function truncate(str, n) { return str && str.length > n ? str.slice(0,n)+'…' : str||''; }
+function fmtDate(d) {
+    if (!d) return '—';
+    const dt = new Date(d);
+    if (isNaN(dt)) return d;
+    return dt.toLocaleDateString('pt-BR');
+}
+function badgeStatus(st) {
+    const map = {Ativa:'badge-green',Planejada:'badge-blue',Concluída:'badge-gray',Cancelada:'badge-red'};
+    return `<span class="badge ${map[st]||'badge-gray'}">${st||'—'}</span>`;
+}
+function badgePrioridadeClass(p) {
+    const map = {urgente:'badge-red',alta:'badge-orange',normal:'badge-blue',baixa:'badge-gray'};
+    return map[p] || 'badge-gray';
+}
+
+function setLoading(v) {
+    document.getElementById('loading').classList.toggle('hidden', !v);
+}
+
+function toast(msg, type='info') {
+    const icons = {success:'bi-check-circle-fill',error:'bi-x-circle-fill',info:'bi-info-circle-fill'};
+    const div = document.createElement('div');
+    div.className = `toast-item ${type}`;
+    div.innerHTML = `<i class="bi ${icons[type]}"></i> ${msg}`;
+    document.getElementById('toast').appendChild(div);
+    setTimeout(() => div.remove(), 3500);
+}
+
+function confirmar(msg, fn) {
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmDialog').classList.remove('hidden');
+    const btn = document.getElementById('confirmOk');
+    btn.onclick = () => { fecharModal('confirmDialog'); fn(); };
+}
+
+function fecharModal(id) {
+    document.getElementById(id).classList.add('hidden');
+}
+
+// Fechar modais clicando fora
+document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => {
+        if (e.target === el) fecharModal(el.id);
+    });
+});
+
+// Enter no login
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !document.getElementById('loginScreen').classList.contains('hidden')) {
+        login();
+    }
+});
+
+// Responsivo: mostrar menu toggle
+window.addEventListener('resize', () => {
+    const toggle = document.getElementById('menuToggle');
+    if (toggle) toggle.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+});
+</script>
+</body>
+</html>
